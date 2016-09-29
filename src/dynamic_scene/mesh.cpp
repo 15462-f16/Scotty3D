@@ -239,14 +239,6 @@ Info Mesh::getInfo()
 }
 
 void Mesh::_bevel_selection( double inset, double shift ) {
-  // vector<HalfedgeIter> hs;
-  // for (auto he : bevelVertices) {
-  //   Halfedge* h = elementAddress(he);
-  //   if (h == nullptr) {
-  //     return;
-  //   }
-  //   hs.push_back(h->twin()->twin());
-  // }
 
   if( scene == nullptr ) return;
   HalfedgeElement *element = scene->selected.element;

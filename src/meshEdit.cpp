@@ -236,17 +236,17 @@ namespace CMU462 {
 
   FaceIter HalfedgeMesh::bevelVertex(VertexIter v) {
     // TODO bevel vertex
-    return FaceIter();
+    return facesBegin();
   }
 
   FaceIter HalfedgeMesh::bevelEdge(EdgeIter e) {
     // TODO bevel edge
-    return FaceIter();
+    return facesBegin();
   }
 
   FaceIter HalfedgeMesh::bevelFace(FaceIter f) {
     // TODO bevel face
-    return FaceIter();
+    return facesBegin();
   }
 
   void HalfedgeMesh::splitPolygons(vector<FaceIter>& fcs) {

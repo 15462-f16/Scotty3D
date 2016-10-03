@@ -165,7 +165,7 @@ find_package(PkgConfig QUIET)
 
 # GLEW
 if(PKGCONFIG_FOUND)
-  pkg_search_module(GLEW QUIET glew)
+  pkg_search_module(GLEW QUIET GLEW)
 else(PKGCONFIG_FOUND)
   find_package(GLEW QUIET)
 endif()

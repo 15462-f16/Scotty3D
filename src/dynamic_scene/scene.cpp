@@ -244,10 +244,10 @@ Info Scene::getSelectionInfo()
    return info;
 }
 
-void Scene::collapse_selected_edge() {
+void Scene::collapse_selected_element() {
    if( selected.object == nullptr || selected.element == nullptr ) return;
    Mesh* m = dynamic_cast<Mesh*>( selected.object );
-   if( m ) m->collapse_selected_edge();
+   if( m ) m->collapse_selected_element();
 }
 
 void Scene::flip_selected_edge() {

@@ -530,7 +530,7 @@ namespace CMU462 {
             scene->split_selected_edge();
             break;
           case 'c': case 'C':
-            scene->collapse_selected_edge();
+            scene->collapse_selected_element();
             break;
           case 'n': case 'N':
             scene->selectNextHalfedge();

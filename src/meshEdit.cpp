@@ -22,8 +22,19 @@ namespace CMU462 {
     return VertexIter();
   }
 
+  VertexIter HalfedgeMesh::collapseFace(FaceIter f) {
+
+    // TODO: (meshEdit)
+    // This method should collapse the given face and return an iterator to
+    // the new vertex created by the collapse.
+    return VertexIter();
+  }
+
   FaceIter HalfedgeMesh::eraseVertex(VertexIter v) {
 
+    // TODO: (meshEdit)
+    // This method should replace the given vertex and all its neighboring
+    // edges and faces with a single face, returning the new face.
     return FaceIter();
   }
 
@@ -138,7 +149,7 @@ namespace CMU462 {
     // a lot like HalfedgeMesh::computeLinearSubdivisionPositions(),
     // except that the calculation of the positions themsevles is
     // slightly more involved, using the Catmull-Clark subdivision
-    // rules. XXX Need to carefully specify rules...
+    // rules.  (These rules are outlined in the Developer Manual.)
 
     // TODO face
 

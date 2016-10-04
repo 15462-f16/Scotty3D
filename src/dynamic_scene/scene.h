@@ -217,7 +217,7 @@ class Scene {
    */
   Info getSelectionInfo();
 
-  void collapse_selected_edge();
+  void collapse_selected_element();
   void flip_selected_edge();
   void split_selected_edge();
   void erase_selected_element();

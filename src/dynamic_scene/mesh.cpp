@@ -240,31 +240,48 @@ Info Mesh::getInfo()
 
 void Mesh::_bevel_selection( double inset, double shift ) {
 
-  if( scene == nullptr ) return;
-  HalfedgeElement *element = scene->selected.element;
-  if (element == nullptr) return;
-  Vertex *v = element->getVertex();
-  Edge *e = element->getEdge();
-  Face *f = element->getFace();
+   if( scene == nullptr ) return;
+   HalfedgeElement *element = scene->selected.element;
+   if (element == nullptr) return;
+   Vertex *v = element->getVertex();
+   Edge *e = element->getEdge();
+   Face *f = element->getFace();
 
-  if (v != nullptr) {
-    mesh._bevel_vtx_reposition_with_dist(beveledVertexPos, bevelVertices, inset);
-  } else if (e != nullptr) {
-    mesh._bevel_edge_reposition_with_dist(beveledEdgePos, bevelVertices, inset);
-  } else if (f != nullptr) {
-    mesh._bevel_fc_reposition_with_dist(beveledFacePos, bevelVertices, shift, inset);
-  } else {
-    return;
-  }
+   if (v != nullptr) {
+      mesh._bevel_vtx_reposition_with_dist(beveledVertexPos, bevelVertices, inset);
+   } else if (e != nullptr) {
+      mesh._bevel_edge_reposition_with_dist(beveledEdgePos, bevelVertices, inset);
+   } else if (f != nullptr) {
+      mesh._bevel_fc_reposition_with_dist(beveledFacePos, bevelVertices, shift, inset);
+   } else {
+      return;
+   }
+
+   scene->hovered.clear();
+   scene->elementTransform->target.clear();
 }
 
-void Mesh::collapse_selected_edge() {
+void Mesh::collapse_selected_element() {
    if( scene == nullptr ) return;
    HalfedgeElement *element = scene->selected.element;
    if (element == nullptr) return;
    Edge *edge = element->getEdge();
-   if (edge == nullptr) return;
-   VertexIter v = mesh.collapseEdge(edge->halfedge()->edge());
+   Face *face = element->getFace();
+   VertexIter v;
+
+   if (edge != nullptr)
+   {
+      v = mesh.collapseEdge(edge->halfedge()->edge());
+   }
+   else if( face != nullptr )
+   {
+      v = mesh.collapseFace(face->halfedge()->face());
+   }
+   else
+   {
+      return;
+   }
+
    scene->selected.element = elementAddress( v );
    scene->hovered.clear();
    scene->elementTransform->target.clear();

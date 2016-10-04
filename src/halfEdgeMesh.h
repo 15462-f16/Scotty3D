@@ -930,6 +930,11 @@
         VertexIter collapseEdge(EdgeIter e);
 
         /**
+         * Collapse a face, returning a pointer to the collapsed vertex
+         */
+        VertexIter collapseFace(FaceIter f);
+
+        /**
          * Merge all faces incident on a given vertex, returning a
          * pointer to the merged face.
          */

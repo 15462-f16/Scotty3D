@@ -35,7 +35,7 @@ class Mesh : public SceneObject {
   BSDF *get_bsdf();
   StaticScene::SceneObject *get_static_object();
 
-  void collapse_selected_edge();
+  void collapse_selected_element();
   void flip_selected_edge();
   void split_selected_edge();
   void erase_selected_element();

@@ -98,7 +98,7 @@ In addition to beveling, a variety of commands can be used to alter the connecti
 
 * **EdgeSplit** - [Note: this method is for triangle meshes only!] The selected edge _e_ is split at its midpoint, and the new vertex _v_ is connected to the two opposite vertices (or one in the case of a surface with boundary).
 
-  ![Scotty3DEdgeSplit](docs/images/Scotty3DEdgeFlip.svg)
+  ![Scotty3DEdgeSplit](docs/images/Scotty3DEdgeSplit.svg)
 
 ### GLOBAL MESH PROCESSING
    

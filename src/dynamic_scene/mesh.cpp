@@ -371,15 +371,21 @@ void Mesh::bevel_selected_element() {
 
       _newf = mesh.bevelFace(f->halfedge()->face());
       scene->selected.element = elementAddress(_newf);
+      scene->hovered.clear();
+      scene->elementTransform->target.clear();
    } else if (e != nullptr) {
       VertexIter v0 = e->halfedge()->vertex();
       VertexIter v1 = e->halfedge()->twin()->vertex();
       _newf = mesh.bevelEdge(e->halfedge()->edge());
       scene->selected.element = elementAddress(_newf->halfedge()->edge());
+      scene->hovered.clear();
+      scene->elementTransform->target.clear();
    } else if (v != nullptr) {
       beveledVertexPos = v->position;
       _newf = mesh.bevelVertex(v->halfedge()->vertex());
       scene->selected.element = elementAddress(_newf->halfedge()->vertex());
+      scene->hovered.clear();
+      scene->elementTransform->target.clear();
    } else {
       return;
    }

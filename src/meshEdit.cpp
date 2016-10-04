@@ -230,33 +230,101 @@ namespace CMU462 {
     // TODO append each list of four indices to face list
   }
 
-  void HalfedgeMesh::_bevel_fc_reposition_with_dist(vector<Vector3D>& orig, vector<HalfedgeIter>& hs, double shift, double inset )
+  void HalfedgeMesh::_bevel_fc_reposition_with_dist( vector<Vector3D>& orig, // list of vertex positions of the original face (before bevel)
+                                                     vector<HalfedgeIter>& hs, // list of halfedges pointing from the vertices of the new, beveled face to the old, original face
+                                                     double shift, // user-requested amount to shift the face in the normal direction
+                                                     double inset ) // user-requested amount by which to inset (i.e., grow/shrink) the beveled face
   {
-    // TODO reposition beveled face with shift and inset
+    // TODO Compute new vertex positions for the vertices of the beveled face.
+    //
+    // These vertices can be accessed via hs[i]->vertex()->position for i = 1, ..., hs.size()-1.
+    //
+    // The basic strategy here is to loop over the list of outgoing halfedges,
+    // and use the preceding and next vertex position from the original mesh
+    // (in the orig array) to compute an offset vertex position.
+    //
+    // Note that there is a 1-to-1 correspondence between halfedges in hs and vertex positions
+    // in orig.  So, you can write loops of the form
+    //
+    // for( int i = 0; i < hs.size(); hs++ )
+    // {
+    //    Vector3D pi = orig[i]; // get the original vertex position correponding to vertex i
+    // }
+    //
   }
 
-  void HalfedgeMesh::_bevel_vtx_reposition_with_dist(Vector3D orig, vector<HalfedgeIter>& hs, double inset) {
-    // TODO reposition beveled vertex with inset
+  void HalfedgeMesh::_bevel_vtx_reposition_with_dist( Vector3D orig, // original vertex position, before the bevel
+                                                      vector<HalfedgeIter>& hs, // list of halfedges pointing from the vertices of the new, beveled face to the neighbors of the original vertex
+                                                      double inset ) // user-requested amount by which to inset (i.e., grow/shrink) the beveled face
+  {
+    // TODO Compute new vertex positions for the vertices of the beveled vertex.
+    //
+    // These vertices can be accessed via hs[i]->vertex()->position for i = 1, ..., hs.size()-1.
+    //
+    // The basic strategy here is to loop over the list of outgoing halfedges,
+    // and use the preceding and next vertex position from the original mesh
+    // (in the orig array) to compute an offset vertex position.
+    //
+    // Note that there is a 1-to-1 correspondence between halfedges in hs and vertex positions
+    // in orig.  So, you can write loops of the form
+    //
+    // for( int i = 0; i < hs.size(); hs++ )
+    // {
+    //    Vector3D pi = orig[i]; // get the original vertex position correponding to vertex i
+    // }
+    //
   }
 
-  void HalfedgeMesh::_bevel_edge_reposition_with_dist(vector<Vector3D>& origs, 
-      vector<HalfedgeIter>& hs, 
-      double inset) {
-    // TODO reposition beveled edge with inset
+  void HalfedgeMesh::_bevel_edge_reposition_with_dist( vector<Vector3D>& origs,  // list of vertex positions of the neighbors of the two endpoints of the edge, before the bevel
+                                                       vector<HalfedgeIter>& hs,  // list of halfedges pointing from the vertices of the new, beveled face to the neighbors of the endpoints of the old, original edge
+                                                       double inset) // user-requested amount by which to inset (i.e., grow/shrink) the beveled face
+  {
+    // TODO Compute new vertex positions for the vertices of the beveled edge.
+    //
+    // These vertices can be accessed via hs[i]->vertex()->position for i = 1, ..., hs.size()-1.
+    //
+    // The basic strategy here is to loop over the list of outgoing halfedges,
+    // and use the preceding and next vertex position from the original mesh
+    // (in the orig array) to compute an offset vertex position.
+    //
+    // Note that there is a 1-to-1 correspondence between halfedges in hs and vertex positions
+    // in orig.  So, you can write loops of the form
+    //
+    // for( int i = 0; i < hs.size(); hs++ )
+    // {
+    //    Vector3D pi = orig[i]; // get the original vertex position correponding to vertex i
+    // }
+    //
   }
 
   FaceIter HalfedgeMesh::bevelVertex(VertexIter v) {
-    // TODO bevel vertex
+
+    // TODO This method should replace the vertex v with a face, corresponding to a bevel operation.
+    // It should return the new face.  NOTE: This method is responsible for updating the *connectivity*
+    // of the mesh only---it does not need to update the vertex positions.  These positions will be
+    // updated in HalfedgeMesh::_bevel_vtx_reposition_with_dist (which you also have to implement!)
+
     return facesBegin();
   }
 
   FaceIter HalfedgeMesh::bevelEdge(EdgeIter e) {
-    // TODO bevel edge
+
+    // TODO This method should replace the edge e with a face, corresponding to a bevel operation.
+    // It should return the new face.  NOTE: This method is responsible for updating the *connectivity*
+    // of the mesh only---it does not need to update the vertex positions.  These positions will be
+    // updated in HalfedgeMesh::_bevel_vtx_reposition_with_dist (which you also have to implement!)
+
     return facesBegin();
   }
 
   FaceIter HalfedgeMesh::bevelFace(FaceIter f) {
-    // TODO bevel face
+
+    // TODO This method should replace the face f with an additional, inset face (and ring of faces around it),
+    // corresponding to a bevel operation. It should return the new face.  NOTE: This method is responsible for
+    // updating the *connectivity* of the mesh only---it does not need to update the vertex positions.  These
+    // positions will be updated in HalfedgeMesh::_bevel_vtx_reposition_with_dist (which you also have to
+    // implement!)
+
     return facesBegin();
   }
 

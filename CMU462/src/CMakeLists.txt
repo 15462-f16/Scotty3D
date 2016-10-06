@@ -14,7 +14,7 @@ set(CMU462_SOURCE
     color.cpp
     spectrum.cpp
     osdtext.cpp
-    osdfont.c
+    osdfont.cpp
     viewer.cpp
     base64.cpp
     lodepng.cpp

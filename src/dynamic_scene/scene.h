@@ -20,10 +20,6 @@
 
 namespace CMU462 { namespace DynamicScene {
 
-// Info is used to accumulate display
-// information about an object.
-typedef std::vector<std::string> Info;
-
 // Forward declarations
 class Scene;
 class Selection;

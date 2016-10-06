@@ -1010,7 +1010,7 @@ namespace CMU462 {
       draw_string(x0, y, "No mesh feature is selected", size, text_color);
       y += inc;
     } else {
-      DynamicScene::Info selectionInfo = scene->getSelectionInfo();
+      Info selectionInfo = scene->getSelectionInfo();
       for (const string& s : selectionInfo) {
         size_t split = s.find_first_of(":");
         if (split != string::npos) {

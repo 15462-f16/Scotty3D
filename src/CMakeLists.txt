@@ -38,6 +38,7 @@ set(APPLICATION_SOURCE
 
     # misc
     misc/sphere_drawing.cpp
+    getopt.c
 
     # Application
     application.cpp
@@ -91,3 +92,13 @@ set(EXECUTABLE_OUTPUT_PATH ..)
 
 # Install to project root
 install(TARGETS scotty3d DESTINATION ${Scotty3D_SOURCE_DIR})
+
+# Copy Freetype DLLs to the build directory
+if(WIN32)
+    foreach(FREETYPE_DLL ${FREETYPE_RUNTIMELIBS})
+        add_custom_command(TARGET scotty3d POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${FREETYPE_DLL}"
+                $<TARGET_FILE_DIR:scotty3d>)
+    endforeach(FREETYPE_DLL)
+endif(WIN32)

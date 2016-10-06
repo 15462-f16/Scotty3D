@@ -51,7 +51,8 @@ int OSDText::init(bool use_hdpi) {
   }
 
   // decode font and keep in memory
-  string encoded = osdfont_base64;
+  string encoded = osdfont_base64_1 + osdfont_base64_2 + osdfont_base64_3 
+                    + osdfont_base64_4 + osdfont_base64_5 + osdfont_base64_6;
   string decoded = base64_decode(encoded);
   size_t size = decoded.size();
   font = new char[size];

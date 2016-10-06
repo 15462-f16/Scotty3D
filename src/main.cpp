@@ -13,7 +13,7 @@
 typedef unsigned int gid_t; // XXX Needed on some platforms, since gid_t is used in unistd.h but not always defined! (WARNING: May not be the right size!!)
 #endif
 
-#include <unistd.h>
+#include "getopt.h"
 
 using namespace std;
 using namespace CMU462;

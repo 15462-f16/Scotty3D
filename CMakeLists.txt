@@ -68,7 +68,7 @@ set(LINUX UNIX AND NOT APPLE)
 if(LINUX)
 
   # GCC only
-  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
     set(GCC_CXX_FLAGS "-std=gnu++11 -m64")
 
@@ -117,6 +117,7 @@ if(WIN32)
     endif(BUILD_DEBUG)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MSVC_CXX_FLAGS}")
+    add_definitions(-D_USE_MATH_DEFINES)
 
   endif(MSVC)
 
@@ -142,7 +143,9 @@ endif(WIN32)
 # Required packages
 find_package(OpenGL REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Freetype REQUIRED)
+if (NOT WIN32)
+  find_package(Freetype REQUIRED)
+endif ()
 
 # CMU462
 if(BUILD_LIBCMU462)

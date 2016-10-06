@@ -85,7 +85,7 @@ set(LINUX UNIX AND NOT APPLE)
 if(LINUX)
 
   # GCC only
-  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
     set(GCC_CXX_FLAGS "-std=gnu++11 -m64")
 
@@ -135,6 +135,8 @@ if(WIN32)
 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MSVC_CXX_FLAGS}")
 
+    add_subdirectory("${CMU462_SOURCE_DIR}/deps/freetype")
+
   endif(MSVC)
 
   if(MINGW)
@@ -158,7 +160,9 @@ endif(WIN32)
 
 # Required packages
 find_package(OpenGL REQUIRED)
-find_package(Freetype REQUIRED)
+if(NOT WIN32)
+  find_package(Freetype REQUIRED)
+endif()
 
 # Use pkg-config for GLEW & GLFW if available
 find_package(PkgConfig QUIET)

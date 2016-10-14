@@ -268,6 +268,10 @@ namespace CMU462 {
       }
     }
 
+    if (lights.size() == 0) { // no lights, default use ambient_light
+      LightInfo default_light = LightInfo();
+      lights.push_back(new DynamicScene::AmbientLight(default_light));
+    }
     scene = new DynamicScene::Scene(objects, lights);
 
     const BBox& bbox = scene->get_bbox();
@@ -462,6 +466,7 @@ namespace CMU462 {
             to_model_mode();
             break;
           case 'v': case 'V':
+            scene->triangulateSelection();
             pathtracer->stop();
             pathtracer->start_visualizing();
             mode = VISUALIZE_MODE;
@@ -490,6 +495,7 @@ namespace CMU462 {
             to_model_mode();
             break;
           case 'r': case 'R':
+            scene->triangulateSelection();
             pathtracer->stop();
             pathtracer->start_raytracing();
             mode = RENDER_MODE;
@@ -503,16 +509,18 @@ namespace CMU462 {
         break;
       case MODEL_MODE:
         switch(codepoint) {
-          // case 'r': case 'R':
-          //    set_up_pathtracer();
-          //    pathtracer->start_raytracing();
-          //    mode = RENDER_MODE;
-          //    break;
-          // case 'v': case 'V':
-          //    set_up_pathtracer();
-          //    pathtracer->start_visualizing();
-          //    mode = VISUALIZE_MODE;
-          //    break;
+          case 'r': case 'R':
+             scene->triangulateSelection();
+             set_up_pathtracer();
+             pathtracer->start_raytracing();
+             mode = RENDER_MODE;
+             break;
+          case 'v': case 'V':
+             scene->triangulateSelection();
+             set_up_pathtracer();
+             pathtracer->start_visualizing();
+             mode = VISUALIZE_MODE;
+             break;
           case 'u': case 'U':
             scene->upsample_selected_mesh();
             break;

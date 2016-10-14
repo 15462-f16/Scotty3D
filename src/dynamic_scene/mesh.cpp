@@ -357,18 +357,6 @@ void Mesh::bevel_selected_element() {
          tmp = tmp->next();
       } while (tmp != f->halfedge());
 
-
-      // HalfedgeIter h = f->halfedge();
-      // Vector3D center = Vector3D(0., 0., 0.);
-      // HalfedgeIter hprev = h;
-      // do {
-      //   center += h->vertex()->position;
-      //   hprev = h;
-      //   h = h->next();
-      // } while (h != f->halfedge());
-      // center /= deg;
-
-
       _newf = mesh.bevelFace(f->halfedge()->face());
       scene->selected.element = elementAddress(_newf);
       scene->hovered.clear();

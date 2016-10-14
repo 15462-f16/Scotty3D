@@ -15,11 +15,15 @@ namespace CMU462 { namespace StaticScene {
 
 Mesh::Mesh(const HalfedgeMesh& mesh, BSDF* bsdf) {
 
+  // triangulate mesh before sending to visualization or render mode
+  HalfedgeMesh _mesh(mesh);
+  _mesh.triangulate();
+
   unordered_map<const Vertex *, int> vertexLabels;
   vector<const Vertex *> verts;
 
   size_t vertexI = 0;
-  for (VertexCIter it = mesh.verticesBegin(); it != mesh.verticesEnd(); it++) {
+  for (VertexCIter it = _mesh.verticesBegin(); it != _mesh.verticesEnd(); it++) {
     const Vertex *v = &*it;
     verts.push_back(v);
     vertexLabels[v] = vertexI;
@@ -33,7 +37,7 @@ Mesh::Mesh(const HalfedgeMesh& mesh, BSDF* bsdf) {
     normals[i]   = verts[i]->normal();
   }
 
-  for (FaceCIter f = mesh.facesBegin(); f != mesh.facesEnd(); f++) {
+  for (FaceCIter f = _mesh.facesBegin(); f != _mesh.facesEnd(); f++) {
     HalfedgeCIter h = f->halfedge();
     indices.push_back(vertexLabels[&*h->vertex()]);
     indices.push_back(vertexLabels[&*h->next()->vertex()]);

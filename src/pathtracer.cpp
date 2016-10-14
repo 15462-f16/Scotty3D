@@ -220,7 +220,6 @@ namespace CMU462 {
 
 
   void PathTracer::build_accel() {
-    // cout << "PathTracer.build_accel" << endl;
 
     // collect primitives //
     fprintf(stdout, "[PathTracer] Collecting primitives... "); fflush(stdout);
@@ -254,10 +253,11 @@ namespace CMU462 {
   }
 
   void PathTracer::visualize_accel() const {
-    // cout << "PathTracer.visualize_accel" << endl;
+
     glPushAttrib(GL_ENABLE_BIT);
     glDisable(GL_LIGHTING);
-    glLineWidth(1);
+    glBlendFunc(GL_ONE, GL_ZERO);
+    glLineWidth(.001);
     glEnable(GL_DEPTH_TEST);
 
     // hardcoded color settings
@@ -375,17 +375,17 @@ namespace CMU462 {
         if (ns_aa < 1) ns_aa = 1;
         printf("Samples per pixel changed to %lu\n", ns_aa);
         break;
-      case KEYBOARD_UP:
+      case KEYBOARD_UP: case '?':
         if (current != bvh->get_root()) {
           selectionHistory.pop();
         }
         break;
-      case KEYBOARD_LEFT:
+      case KEYBOARD_LEFT: case '<':
         if (current->l) {
           selectionHistory.push(current->l);
         }
         break;
-      case KEYBOARD_RIGHT:
+      case KEYBOARD_RIGHT: case '>':
         if (current->l) {
           selectionHistory.push(current->r);
         }

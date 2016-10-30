@@ -321,6 +321,8 @@ namespace CMU462 {
           }
         } while (i != h);
 
+        b->halfedge() = boundaryHalfedges.front();
+
         // The only pointers that still need to be set are the "next" pointers of
         // the twins; these we can set from the list of boundary halfedges, but we
         // must use the opposite order from the order in the list, since the

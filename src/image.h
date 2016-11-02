@@ -65,7 +65,7 @@ namespace CMU462 {
     /**
      * Clear image data.
      */
-    void clear() { memset(&data[0], 0, w * h * sizeof(uint32_t)); }
+    void clear() { if (data.size() > 0) memset(&data[0], 0, w * h * sizeof(uint32_t)); }
 
     size_t w; ///< width
     size_t h; ///< height
@@ -196,7 +196,7 @@ namespace CMU462 {
     /**
      * Clear image buffer.
      */
-    void clear() { memset(&data[0], 0, w * h * sizeof(Spectrum)); }
+    void clear() { if (data.size() > 0) memset(&data[0], 0, w * h * sizeof(Spectrum)); }
 
     size_t w; ///< width
     size_t h; ///< height

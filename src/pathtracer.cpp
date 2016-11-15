@@ -390,8 +390,8 @@ namespace CMU462 {
           selectionHistory.push(current->r);
         }
         break;
-      case 'a':
-      case 'A':
+      case 's':
+      case 'S':
         show_rays = !show_rays;
       default:
         return;
@@ -568,17 +568,14 @@ namespace CMU462 {
     fprintf(stdout, "[PathTracer] Area light sample count decreased to %zu!\n", ns_area_light);
   }
 
-  void PathTracer::save_image() {
+  bool PathTracer::is_done() {
+    update_screen();
+    return (state == DONE);
+  }
+
+  void PathTracer::save_image(string fname) {
 
     if (state != DONE) return;
-
-    time_t rawtime;
-    time (&rawtime);
-
-    string filename = "Screen Shot ";
-    filename += string(ctime(&rawtime));
-    filename.erase(filename.end() - 1);
-    filename += string(".png");
 
     uint32_t* frame = &frameBuffer.data[0];
     size_t w = frameBuffer.w;
@@ -588,8 +585,8 @@ namespace CMU462 {
       memcpy(frame_out + i * w, frame + (h - i - 1) * w, 4 * w);
     }
 
-    fprintf(stderr, "[PathTracer] Saving to file: %s... ", filename.c_str());
-    lodepng::encode(filename, (unsigned char*) frame_out, w, h);
+    fprintf(stderr, "[PathTracer] Saving to file: %s... ", fname.c_str());
+    lodepng::encode(fname, (unsigned char*) frame_out, w, h);
     fprintf(stderr, "Done!\n");
   }
 

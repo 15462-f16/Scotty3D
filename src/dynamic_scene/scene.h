@@ -17,6 +17,8 @@
 #include "../ray.h"
 #include "../static_scene/scene.h"
 #include "../halfEdgeMesh.h"
+#include "../spline.h"
+#include "../timeline.h"
 
 namespace CMU462 { namespace DynamicScene {
 
@@ -33,17 +35,29 @@ class XFormWidget;
  */
 class SceneObject {
  public:
-    SceneObject() : scene( NULL ) {}
+    SceneObject() : scene( NULL ), isVisible( true ), isGhosted( false), isPickable( true ) {}
 
   /**
    * Passes in logic for how to render the object in OpenGL.
    */
   virtual void set_draw_styles(DrawStyle *defaultStyle, DrawStyle *hoveredStyle, DrawStyle *selectedStyle) = 0;
+
   /**
    * Renders the object in OpenGL, assuming that the camera and projection
    * matrices have already been set up.
    */
   virtual void draw() = 0;
+
+  virtual void draw_pretty() { draw(); }
+
+  /**
+   * Renders a semi-transparent version of the object, for situations
+   * where the object is inactive or something inside the object needs
+   * to be selected.  Note that this method does not need to be defined
+   * for all scene objects (default is to draw nothing).  Assumes that
+   * the camera and projection matrices have already been set up.
+   */
+  virtual void drawGhost() {};
 
   /**
    * Given a transformation matrix from local to space to world space, returns
@@ -70,6 +84,11 @@ class SceneObject {
    * expects all the objects to be
    */
   virtual StaticScene::SceneObject *get_static_object() = 0;
+  /**
+   * Does the same thing as get_static_object, but applies the object's
+   * transformations first. 
+   */
+  virtual StaticScene::SceneObject *get_transformed_static_object(double t) { return get_static_object(); }
 
   /**
    * Rather than drawing the object geometry for display, this method draws the
@@ -80,7 +99,8 @@ class SceneObject {
    * will be used by Scene::getHoveredObject to make the final determination
    * of which object (and possibly element within that object) was picked.
    */
-  virtual void draw_pick( int& pickID ) = 0;
+  virtual void draw_pick( int& pickID, bool transformed=false) = 0;
+
 
   /** Assigns attributes of the selection based on the ID of the
    * object that was picked.  Can assume that pickID was one of
@@ -88,10 +108,39 @@ class SceneObject {
    */
   virtual void setSelection( int pickID, Selection& selection ) = 0;
 
+  virtual Matrix4x4 getTransformation();
+
+  virtual Matrix4x4 getRotation();
+
   /**
    * Pointer to the parent scene containing this object.
    */
   Scene* scene;
+
+  /* World-space position, rotation, scale */
+  Vector3D position;
+  Vector3D rotation;
+  Vector3D scale;
+
+  /* Spline interpolation data / functions */
+  Spline<Vector3D> positions;
+  Spline<Vector3D> rotations;
+  Spline<Vector3D> scales;
+
+  /**
+   * Is this object drawn in the scene?
+   */
+  bool isVisible;
+
+  /**
+   * Is this object drawn as semi-transparent?
+   */
+  bool isGhosted;
+
+  /**
+   * Is this object pickable right now?
+   */
+  bool isPickable;
 };
 
 // A Selection stores information about any object or widget that is
@@ -153,6 +202,9 @@ class Scene {
   Scene(std::vector<SceneObject *> _objects, std::vector<SceneLight *> _lights);
   ~Scene();
 
+  static Scene deep_copy(Scene s);
+  void apply_transforms(double t);
+
   /**
    * Attempts to add object o to the scene, returning
    * false if it is already in the scene.
@@ -178,6 +230,18 @@ class Scene {
   void render_in_opengl();
 
   /**
+   * Renders the scene at the given time in OpenGL, according to the
+   * splines specified in the animator.
+   */
+  void render_splines_at(double time, bool pretty, bool useCapsuleRadius);
+
+  /**
+   * Draws the actual curves corresponding to a spline.
+   */
+  void draw_spline_curves(Timeline& timeline);
+
+
+  /**
    * Gets a bounding box for the entire scene in world space coordinates.
    * May not be the tightest possible.
    */
@@ -189,7 +253,7 @@ class Scene {
    * Note that hoverIdx (and therefore has_hover) is automatically updated every
    * time this function is called.
    */
-  void getHoveredObject( const Vector2D& p );
+  void getHoveredObject( const Vector2D& p , bool getElement = true, bool transformed=false);
 
   /**
    * Returns true iff there is a hovered feature in the scene.
@@ -217,6 +281,7 @@ class Scene {
   void flip_selected_edge();
   void split_selected_edge();
   void erase_selected_element();
+  void erase_selected_joint();
 
   void upsample_selected_mesh();
   void downsample_selected_mesh();
@@ -234,6 +299,11 @@ class Scene {
    * to use in raytracing, but doesn't allow modifications.
    */
   StaticScene::Scene *get_static_scene();
+  /**
+   * Does the same thing as get_static_scene, but applies all objects'
+   * transformations.
+   */
+  StaticScene::Scene *get_transformed_static_scene(double t);
 
   /* Keep track of which elements of the scene (if any) are currently
    * under the cursor, selected, or being edited. */
@@ -257,6 +327,8 @@ class Scene {
 
  private:
   Info selectionInfo;
+
+  DrawStyle *defaultStyle, *hoveredStyle, *selectedStyle;
 
   /**
    * Gets the selected object from the scene, returning nullptr if no object is

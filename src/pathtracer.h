@@ -142,7 +142,12 @@ namespace CMU462 {
       /**
        * Save rendered result to png file.
        */
-      void save_image();
+      void save_image(string filename);
+
+      /**
+       * Wait for the scene to finish raytracing.
+       */
+      bool is_done();
 
     private:
 

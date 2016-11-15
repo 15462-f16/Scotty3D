@@ -1,4 +1,7 @@
 #include "widgets.h"
+#include "mesh.h"
+#include "skeleton.h"
+#include "joint.h"
 
 #include <sstream>
 using std::ostringstream;
@@ -10,12 +13,47 @@ XFormWidget::XFormWidget()
 {
    target.object = nullptr;
    target.element = nullptr;
+   objectMode = false;
+   transformedMode = false;
+   jointMode = false;
+   jointIsRoot = false;
    mode = lastMode = Mode::Translate;
+}
+
+void XFormWidget::enterObjectMode() {
+  objectMode = true;
+}
+
+void XFormWidget::exitObjectMode() {
+  objectMode = false;
+}
+
+void CMU462::DynamicScene::XFormWidget::enterJointMode(bool isRoot)
+{
+   jointMode = true;
+   jointIsRoot = isRoot;
+}
+
+void CMU462::DynamicScene::XFormWidget::exitJointMode()
+{
+   jointMode = false;
+}
+
+void XFormWidget::enterTransformedMode() {
+  transformedMode = true;
+}
+
+void XFormWidget::exitTransformedMode() {
+  transformedMode = false;
 }
 
 void XFormWidget::setTarget( Selection& _target )
 {
+  auto originalObj = target.object;
    target = _target;
+   if (objectMode) {
+     if (target.object == this) target.object = originalObj;
+   }
 
    updateGeometry();
 }
@@ -49,6 +87,8 @@ void XFormWidget::setScale()
 
 void XFormWidget::cycleMode()
 {
+   if (jointMode) return;
+
         if( mode == Mode::Translate ) mode = Mode::Rotate;
    else if( mode == Mode::Rotate    ) mode = Mode::Scale;
    else if( mode == Mode::Scale     ) mode = Mode::Translate;
@@ -91,6 +131,7 @@ void XFormWidget::draw()
    axisColors[2] = blue;
    axisColors[3] = white;
 
+   glPushMatrix();
    glDisable( GL_LIGHTING );
 
    glDisable( GL_DEPTH_TEST );
@@ -101,7 +142,8 @@ void XFormWidget::draw()
    glDisable( GL_BLEND );
    glEnable( GL_DEPTH_TEST );
    drawHandles();
-
+   glEnable( GL_LIGHTING );
+   glPopMatrix();
 }
 
 void XFormWidget::drawHandles() const
@@ -272,10 +314,63 @@ void XFormWidget::directionalTransform( Vector3D& p, vector<int> I, Vector3D c, 
 
 void XFormWidget::drag( double x, double y, double dx, double dy, const Matrix4x4& modelViewProj )
 {
-   if( target.element == nullptr || target.axis == Selection::Axis::None )
-   {
-      return;
-   }
+  if (target.axis == Selection::Axis::None) return;
+  if (target.object == nullptr) return;
+  if (target.element == nullptr && !objectMode) return;
+
+  if (objectMode) {
+    Vector3D *update;
+    switch (mode) {
+      case Mode::Translate:
+        update = &target.object->position;
+        break;
+      case Mode::Scale:
+        update = &target.object->scale;
+        break;
+      case Mode::Rotate:
+        update = &target.object->rotation;
+        dx *= 180.0;
+        break;
+    }
+
+    double winX, winY, winZ;
+    double model[16], proj[16];
+    int view[4];
+    glGetDoublev(GL_MODELVIEW_MATRIX, model);
+    glGetDoublev(GL_PROJECTION_MATRIX, proj);
+    glGetIntegerv(GL_VIEWPORT, view);
+    gluProject(center.x, center.y, center.z, model, proj, view, &winX, &winY, &winZ);
+    winY = view[3] - winY;
+    double theta = atan2(winY - y, x - winX) / PI * 180;
+    switch (target.axis) {
+      case Selection::Axis::X:
+        update->x = theta;
+        break;
+      case Selection::Axis::Y:
+        update->y = theta;
+        break;
+      case Selection::Axis::Z:
+        update->z = theta;
+        break;
+    }
+
+    if (mode == Mode::Translate &&
+        target.axis == Selection::Axis::Center) {        
+      Vector4D q( *update, 1. );
+      q = modelViewProj * q; 
+      double w = q.w;
+      q /= w;
+      // Shift by (dx, dy).
+      q.x += dx;
+      q.y += dy;
+      // Transform back into model s*updateace
+      q *= w;
+      q = modelViewProj.inv() * q;
+      *update = q.to3D();
+    }
+
+    return;
+  }
 
    if( mode == Mode::Translate &&
        target.axis == Selection::Axis::Center )
@@ -343,7 +438,7 @@ StaticScene::SceneObject* XFormWidget::get_static_object()
    return nullptr;
 }
 
-void XFormWidget::draw_pick( int& pickID )
+void XFormWidget::draw_pick( int& pickID, bool transformed )
 {
    if( target.object == nullptr ) return;
 
@@ -365,6 +460,8 @@ void XFormWidget::draw_pick( int& pickID )
    axisColors[2] = Zcolor;
    axisColors[3] = Ccolor;
 
+   glPushMatrix();
+
    switch( mode )
    {
       case Mode::Translate:
@@ -379,6 +476,7 @@ void XFormWidget::draw_pick( int& pickID )
       default:
          break;
    }
+   glPopMatrix();
 
    pickID += 4;
 }
@@ -400,12 +498,44 @@ void XFormWidget::setSelection( int pickID, Selection& selection )
 
 void XFormWidget::updateGeometry()
 {
-   if( target.element == nullptr ) return;
+  if (target.object == nullptr) return;
 
    axes.resize(3);
-   center = target.element->centroid();
-   bounds = target.element->bounds();
-   target.element->getAxes( axes );
+   if (objectMode) {
+     Joint* joint = dynamic_cast<Joint*>(target.object);
+     if (joint != nullptr)
+       center = joint->getBasePosInWorld();
+     else
+       center = target.object->position;
+     if (jointMode && jointIsRoot)
+     {
+        Joint* j = dynamic_cast<Joint*>(target.object);
+        if (j != nullptr)
+           bounds = j->skeleton->mesh->get_bbox();
+     }
+     else
+       bounds = target.object->get_bbox();
+     if (joint != nullptr)
+     {
+       joint->getAxes(axes);
+     }
+     else
+     {
+       axes[0] = Vector3D(1., 0., 0.);
+       axes[1] = Vector3D(0., 1., 0.);
+       axes[2] = Vector3D(0., 0., 1.);
+     }
+   } else {
+     if (target.element == nullptr) return;
+     if (transformedMode) {
+       center = target.element->centroid() + target.object->position;
+     }
+     else {
+       center = target.element->centroid();
+     }
+     bounds = target.element->bounds();
+     target.element->getAxes( axes );
+   }
 }
 
 void XFormWidget::drawTranslateHandles() const
@@ -413,9 +543,9 @@ void XFormWidget::drawTranslateHandles() const
    const double arrowSize = .15;
    const int nSides = 8;
 
-   if( target.object == nullptr ) return;
-
-   Vector3D center = target.element->centroid();
+   if (target.object == nullptr) return;
+   
+   int startAxis = (transformedMode && !objectMode) ? 2 : 0;
 
    Vector3D c = center;
    double r = (bounds.max - bounds.min).norm() / 2.;
@@ -423,7 +553,7 @@ void XFormWidget::drawTranslateHandles() const
    // Draw arrow stems
    glLineWidth( 8. );
    glBegin( GL_LINES );
-   for( int i = 0; i < 3; i++ )
+   for( int i = startAxis; i < 3; i++ )
    {
       Vector3D b = c + (1.-arrowSize)*r*axes[i];
 
@@ -436,7 +566,7 @@ void XFormWidget::drawTranslateHandles() const
 
    // Draw arrow heads
    glBegin( GL_TRIANGLES );
-   for( int i = 0; i < 3; i++ )
+   for( int i = startAxis; i < 3; i++ )
    {
       Vector3D a = c + r*axes[i];
       Vector3D b = c + (1.-arrowSize)*r*axes[i];
@@ -464,7 +594,8 @@ void XFormWidget::drawTranslateHandles() const
    }
    glEnd();
 
-   drawCenterHandle();
+   if (!transformedMode || objectMode) drawCenterHandle();
+   glLineWidth( 1. );
 }
 
 void XFormWidget::drawRotateHandles() const
@@ -473,9 +604,7 @@ void XFormWidget::drawRotateHandles() const
    const int nSides = 64;
 
    if( target.object == nullptr ) return;
-
-   Vector3D center = target.element->centroid();
-
+   
    Vector3D c = center;
    double r = (bounds.max - bounds.min).norm() / 2.;
 
@@ -503,6 +632,8 @@ void XFormWidget::drawRotateHandles() const
    glEnd();
 
    drawCenterHandle();
+
+   glLineWidth( 1. );
 }
 
 void XFormWidget::drawScaleHandles() const
@@ -510,8 +641,6 @@ void XFormWidget::drawScaleHandles() const
    const double boxSize = .2;
 
    if( target.object == nullptr ) return;
-
-   Vector3D center = target.element->centroid();
 
    Vector3D c = center;
    double r = (bounds.max - bounds.min).norm() / 2.;
@@ -555,13 +684,16 @@ void XFormWidget::drawScaleHandles() const
    glEnd();
 
    drawCenterHandle();
+
+   glLineWidth( 1. );
 }
 
 void XFormWidget::drawCenterHandle() const
 {
    const double handleSize = .15;
+   
+   Vector3D c = center;
 
-   Vector3D c = target.element->centroid();
    double r = (bounds.max - bounds.min).norm() / 2.;
 
    // Draw center box

@@ -6,11 +6,18 @@
 #include "../collada/polymesh_info.h"
 #include "../halfEdgeMesh.h"
 #include "../meshEdit.h"
+#include "skeleton.h"
 
 #include <map>
 
 namespace CMU462 { namespace DynamicScene {
 
+// A structure for holding linear blend skinning information
+class LBSInfo {
+public:
+  Vector3D blendPos;
+  double distance;
+};
 
 class Mesh : public SceneObject {
  public:
@@ -23,6 +30,11 @@ class Mesh : public SceneObject {
   void set_draw_styles(DrawStyle *defaultStyle, DrawStyle *hoveredStyle,
                        DrawStyle *selectedStyle);
   virtual void draw();
+  virtual void drawGhost();
+
+  void draw_pretty() override;
+
+  StaticScene::SceneObject *get_transformed_static_object(double t) override;
 
   BBox get_bbox();
 
@@ -47,6 +59,14 @@ class Mesh : public SceneObject {
 
   HalfedgeMesh mesh;
 
+  Skeleton* skeleton; // skeleton for mesh
+  void linearBlendSkinning(bool useCapsuleRadius);
+  void forward_euler(float timestep, float damping_factor);
+  void symplectic_euler(float timestep, float damping_factor);
+  void resetWave();
+  void keyframe(double t);
+  void unkeyframe(double t);
+
   /**
    * Rather than drawing the object geometry for display, this method draws the
    * object with unique colors that can be used to determine which object was
@@ -56,7 +76,7 @@ class Mesh : public SceneObject {
    * will be used by Scene::update_selection to make the final determination
    * of which object (and possibly element within that object) was picked.
    */
-  virtual void draw_pick( int& pickID );
+  virtual void draw_pick( int& pickID, bool transformed = false );
 
   /** Assigns attributes of the selection based on the ID of the
    * object that was picked.  Can assume that pickID was one of
@@ -67,7 +87,7 @@ class Mesh : public SceneObject {
  private:
 
   // Helpers for draw().
-  void draw_faces() const;
+  void draw_faces(bool smooth=false) const;
   void draw_edges() const;
   void draw_feature_if_needed( Selection* s ) const;
   void draw_vertex(const Vertex *v) const;

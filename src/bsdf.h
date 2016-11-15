@@ -104,6 +104,7 @@ namespace CMU462 {
        */
       virtual bool refract(const Vector3D& wo, Vector3D* wi, float ior);
 
+      Spectrum rasterize_color;
   }; // class BSDF
 
   /**
@@ -112,7 +113,7 @@ namespace CMU462 {
   class DiffuseBSDF : public BSDF {
     public:
 
-      DiffuseBSDF(const Spectrum& a) : albedo(a) { }
+      DiffuseBSDF(const Spectrum& a) : albedo(a) { rasterize_color = a; }
 
       Spectrum f(const Vector3D& wo, const Vector3D& wi);
       Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
@@ -132,7 +133,9 @@ namespace CMU462 {
   class MirrorBSDF : public BSDF {
     public:
 
-      MirrorBSDF(const Spectrum& reflectance) : reflectance(reflectance) { }
+      MirrorBSDF(const Spectrum& reflectance) : reflectance(reflectance) {
+        rasterize_color = reflectance;
+      }
 
       Spectrum f(const Vector3D& wo, const Vector3D& wi);
       Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
@@ -175,7 +178,9 @@ namespace CMU462 {
     public:
 
       RefractionBSDF(const Spectrum& transmittance, float roughness, float ior)
-        : transmittance(transmittance), roughness(roughness), ior(ior) { }
+        : transmittance(transmittance), roughness(roughness), ior(ior) {
+          rasterize_color = transmittance;
+         }
 
       Spectrum f(const Vector3D& wo, const Vector3D& wi);
       Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
@@ -199,7 +204,7 @@ namespace CMU462 {
       GlassBSDF(const Spectrum& transmittance, const Spectrum& reflectance,
           float roughness, float ior) :
         transmittance(transmittance), reflectance(reflectance),
-        roughness(roughness), ior(ior) { }
+        roughness(roughness), ior(ior) { rasterize_color = transmittance; }
 
       Spectrum f(const Vector3D& wo, const Vector3D& wi);
       Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);

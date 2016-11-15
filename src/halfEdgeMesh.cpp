@@ -386,7 +386,7 @@ namespace CMU462 {
 
     // Now that we have the connectivity, we copy the list of vertex
     // positions into member variables of the individual vertices.
-    if (vertexPositions.size() != vertices.size()) {
+    if (vertexPositions.size() < vertices.size()) {
       cerr << "Error converting polygons to halfedge mesh: number of vertex "
         "positions is different from the number of distinct vertices!"
         << endl;
@@ -408,6 +408,7 @@ namespace CMU462 {
       // set the att of this vertex to the corresponding
       // position in the input
       v->position = vertexPositions[i];
+      v->bindPosition = v->position;
       i++;
     }
 
@@ -507,6 +508,47 @@ namespace CMU462 {
   Vector3D Vertex::centroid() const
   {
     return position;
+  }
+
+  void Vertex::getNeighborhood(map<HalfedgeIter, double>& seen, int depth) {
+    if (depth < 0) return;
+
+    HalfedgeIter h = _halfedge;
+    double dist = INF_D;
+    do {
+      VertexIter u = h->twin()->vertex();
+      auto d = seen.find(u->halfedge());
+      if (d != seen.end()) {
+        dist = std::min(d->second + (u->position - position).norm(), dist);
+      }
+      h = h->twin()->next();
+    } while (h != _halfedge);
+
+    if (seen.find(h) == seen.end() || seen.find(h)->second > dist) {
+      seen.emplace(h, dist);
+    }
+
+    h = _halfedge;
+    do {
+      VertexIter u = h->twin()->vertex();
+      u->getNeighborhood(seen, depth-1);
+      h = h->twin()->next();
+    } while (h != _halfedge);
+  }
+
+  void Vertex::smoothNeighborhood(double diff, map<HalfedgeIter, double>& seen, int depth) {
+
+    seen.emplace(_halfedge, 0.0);
+
+    getNeighborhood(seen, depth);
+
+    for (auto hd : seen) {
+      HalfedgeIter h = hd.first;
+      VertexIter u = h->vertex();
+      double dist = hd.second;
+      double newDiff = diff*exp(-dist*dist *2.0);
+      u->offset += newDiff;
+    }
   }
 
   Vector3D Edge::centroid() const
@@ -614,6 +656,13 @@ namespace CMU462 {
   BBox Halfedge::bounds() const
   {
     return edge()->bounds();
+  }
+
+  /* TODO */
+  float Vertex::laplacian() const
+  {
+    // Implement Me! (Task 4)
+    return 0.0;
   }
 
   void Vertex::getAxes( vector<Vector3D>& axes ) const

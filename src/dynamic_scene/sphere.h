@@ -44,7 +44,7 @@ class Sphere : public SceneObject {
    * will be used by Scene::update_selection to make the final determination
    * of which object (and possibly element within that object) was picked.
    */
-  virtual void draw_pick( int& pickID );
+  virtual void draw_pick( int& pickID, bool transformed = false );
 
   /** Assigns attributes of the selection based on the ID of the
    * object that was picked.  Can assume that pickID was one of

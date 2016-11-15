@@ -1,4 +1,5 @@
 #include "mesh.h"
+#include "joint.h"
 #include "widgets.h"
 
 #include <cassert>
@@ -31,24 +32,123 @@ Mesh::Mesh( Collada::PolymeshInfo& polyMesh, const Matrix4x4& transform)
    if (polyMesh.material) {
       bsdf = polyMesh.material->bsdf;
    } else {
-      bsdf = new DiffuseBSDF(Spectrum(0.5f,0.5f,0.5f));
+//      bsdf = new DiffuseBSDF(Spectrum(0.5f,0.5f,0.5f));
+      bsdf = new DiffuseBSDF(Spectrum(1., 1., 1.));
    }
+
+   scale = Vector3D(1., 1., 1.);
+   scales.setValue(0, scale);
+
+   skeleton = new Skeleton(this);
+}
+
+void Mesh::linearBlendSkinning(bool useCapsuleRadius)
+{
+  // Implement Me! (Task 3a, Task 3b)
+}
+
+
+void Mesh::forward_euler(float timestep, float damping_factor) {
+  // Implement Me! (Task 4)
+}
+
+void Mesh::symplectic_euler(float timestep, float damping_factor) {
+  // Implement Me! (Task 4)
+}
+
+void Mesh::resetWave() {
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->velocity = 0.0;
+    v->offset = 0.0;
+  }
+}
+
+void Mesh::keyframe(double t) {
+  positions.setValue(t, position);
+  rotations.setValue(t, rotation);
+  scales.setValue(t, scale);
+  if (skeleton) skeleton->keyframe(t);
+}
+
+void Mesh::unkeyframe(double t) {
+  positions.removeKnot(t, 0.1);
+  rotations.removeKnot(t, 0.1);
+  scales.removeKnot(t, 0.1);
+  if (skeleton) skeleton->unkeyframe(t); 
+}
+
+
+
+
+void Mesh::draw_pretty() {
+
+  vector<Vector3D> offsets;
+
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    Vector3D offset = v->offset * v->normal();
+    offsets.push_back(offset);
+  }
+
+  int i = 0;
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->position += offsets[i++];
+  }
+
+  glPushMatrix();
+  glTranslatef(position.x, position.y, position.z);
+  glRotatef(rotation.x, 1.0f, 0.0f, 0.0f);
+  glRotatef(rotation.y, 0.0f, 1.0f, 0.0f);
+  glRotatef(rotation.z, 0.0f, 0.0f, 1.0f);
+  glScalef(scale.x, scale.y, scale.z);
+
+  if (bsdf) {
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, &bsdf->rasterize_color.r);
+  } else {
+    glBindTexture(GL_TEXTURE_2D, 0);
+    Spectrum white = Spectrum(1., 1., 1.);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, &white.r);
+  }
+
+	// Enable lighting for faces
+  glEnable(GL_LIGHTING);
+  glDisable(GL_BLEND);
+  draw_faces(true);
+
+  glPopMatrix();
+
+  i = 0;
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->position -= offsets[i++];
+  }
 }
 
 void Mesh::draw() {
 
-   glDisable( GL_BLEND );
+  vector<Vector3D> offsets;
 
-  // TODO: fix drawing with BSDF
-  // DiffuseBSDF* diffuse = dynamic_cast<DiffuseBSDF*>(bsdf);
-  // if (diffuse) {
-  //   glBindTexture(GL_TEXTURE_2D, 0);
-  //   glMaterialfv(GL_FRONT, GL_DIFFUSE, &diffuse->albedo.r);
-  // }
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    Vector3D offset = v->offset * v->normal();
+    offsets.push_back(offset);
+  }
+
+  int i = 0;
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->position += offsets[i++];
+  }
+
+  glPushMatrix();
+  glTranslatef(position.x, position.y, position.z);
+  glRotatef(rotation.x, 1.0f, 0.0f, 0.0f);
+  glRotatef(rotation.y, 0.0f, 1.0f, 0.0f);
+  glRotatef(rotation.z, 0.0f, 0.0f, 1.0f);
+  glScalef(scale.x, scale.y, scale.z);
+
+  glDisable( GL_BLEND );
 
 	// Enable lighting for faces
   glEnable(GL_LIGHTING);
-  draw_faces();
+  draw_faces(false);
 
    glEnable( GL_BLEND );
    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
@@ -63,17 +163,69 @@ void Mesh::draw() {
      draw_feature_if_needed( &scene->selected );
      draw_feature_if_needed( &scene->hovered );
   }
+
   glEnable(GL_LIGHTING);
   glDisable( GL_BLEND );
+
+  glPopMatrix();
+
+  i = 0;
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->position -= offsets[i++];
+  }
 }
 
-void Mesh::draw_faces() const {
+void Mesh::drawGhost() {
+
+
+  vector<Vector3D> offsets;
+
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    Vector3D offset = v->offset * v->normal();
+    offsets.push_back(offset);
+  }
+
+  int i = 0;
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->position += offsets[i++];
+  }
+
+  glPushMatrix();
+  glTranslatef(position.x, position.y, position.z);
+  glRotatef(rotation.x, 1.0f, 0.0f, 0.0f);
+  glRotatef(rotation.y, 0.0f, 1.0f, 0.0f);
+  glRotatef(rotation.z, 0.0f, 0.0f, 1.0f);
+  glScalef(scale.x, scale.y, scale.z);
+
+  glEnable( GL_BLEND );
+  //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glBlendFunc(GL_ONE, GL_ONE);
+
+  draw_faces();
+
+  glDisable(GL_BLEND);
+
+  glPopMatrix();
+
+  i = 0;
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->position -= offsets[i++];
+  }
+
+}
+
+void Mesh::draw_faces(bool smooth) const {
 
    GLfloat white[4] = { 1., 1., 1., 1. };
+   GLfloat faceColor[4] = { 1., 1., 1., 1. };
+   if (isGhosted)
+   {
+     faceColor[0] = faceColor[1] = faceColor[2] = faceColor[3] = 0.25;
+   }
    glEnable( GL_LIGHTING );
    glEnable( GL_LIGHT0 );
    glLightfv( GL_LIGHT0, GL_DIFFUSE, white );
-   glMaterialfv( GL_FRONT_AND_BACK, GL_DIFFUSE, white );
+   if (!smooth) glMaterialfv( GL_FRONT_AND_BACK, GL_DIFFUSE, faceColor);
 
   for (FaceCIter f = mesh.facesBegin(); f != mesh.facesEnd(); f++) {
 
@@ -82,16 +234,22 @@ void Mesh::draw_faces() const {
     glPolygonOffset(1.0, 1.0);
 
     DrawStyle* style = get_draw_style(elementAddress(f));
-    if (style != defaultStyle) {
-      glDisable(GL_LIGHTING);
-      style->style_face();
+    if (!smooth) {
+      if (style != defaultStyle) {
+        glDisable(GL_LIGHTING);
+        style->style_face();
+      }
     }
 
     glBegin(GL_POLYGON);
     Vector3D normal(f->normal());
-    glNormal3dv(&normal.x);
+    if (!smooth) glNormal3dv(&normal.x);
     HalfedgeCIter h = f->halfedge();
     do {
+      if (smooth) {
+        Vector3D N = h->vertex()->normal();
+        glNormal3d(N.x, N.y, N.z);
+      }
       glVertex3dv(&h->vertex()->position.x);
       h = h->next();
     } while (h != f->halfedge());
@@ -427,6 +585,11 @@ void Mesh::upsample()
       }
    }
    resampler.upsample(mesh);
+   // Make sure the bind position is set
+   for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++)
+   {
+     v->bindPosition = v->position;
+   }
    scene->selected.clear();
    scene->hovered.clear();
    scene->elementTransform->target.clear();
@@ -455,9 +618,24 @@ void Mesh::newPickElement( int& pickID, HalfedgeElement* e )
    pickID++;
 }
 
-void Mesh::draw_pick( int& pickID )
+void Mesh::draw_pick( int& pickID, bool transformed )
 {
    idToElement.clear();
+   if (isGhosted) return;
+   vector<Vector3D> originalPositions;
+
+   if (transformed) {
+     glPushMatrix();
+     glTranslatef(position.x, position.y, position.z);
+     glRotatef(rotation.x, 1.0f, 0.0f, 0.0f);
+     glRotatef(rotation.y, 0.0f, 1.0f, 0.0f);
+     glRotatef(rotation.z, 0.0f, 0.0f, 1.0f);
+     glScalef(scale.x, scale.y, scale.z);
+     for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+       originalPositions.push_back(v->position);
+       v->position += v->offset * v->normal();
+     }
+   }
 
    for( FaceIter f = mesh.facesBegin(); f != mesh.facesEnd(); f++ )
    {
@@ -514,6 +692,14 @@ void Mesh::draw_pick( int& pickID )
       }
       while( h != f->halfedge() );
    }
+
+   if (transformed) {
+     glPopMatrix();
+     int i = 0;
+     for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+       v->position = originalPositions[i++];
+     }
+   }
 }
 
 void Mesh::setSelection( int pickID, Selection& selection )
@@ -530,7 +716,22 @@ void Mesh::setSelection( int pickID, Selection& selection )
 
 void Mesh::drag( double x, double y, double dx, double dy, const Matrix4x4& modelViewProj )
 {
-   cerr << "NO MESH DRAG" << endl;
+   Vector4D q(position, 1.);
+
+   // Transform into clip space
+   q = modelViewProj * q;
+   double w = q.w;
+   q /= w;
+
+   // Shift by (dx, dy).
+   q.x += dx;
+   q.y += dy;
+
+   // Transform back into model space
+   q *= w;
+   q = modelViewProj.inv() * q;
+
+   position = q.to3D();
 }
 
 BSDF* Mesh::get_bsdf() {
@@ -541,6 +742,54 @@ StaticScene::SceneObject *Mesh::get_static_object() {
   return new StaticScene::Mesh(mesh, bsdf);
 }
 
+Matrix3x3 rotateMatrix(float ux, float uy, float uz, float theta) {
+  Matrix3x3 out = Matrix3x3();
+  float c = cos(theta);
+  float s = sin(theta);
+  out(0, 0) = c + ux*ux*(1 - c);
+  out(0, 1) = ux*uy*(1 - c) - uz*s;
+  out(0, 2) = ux*uz*(1 - c) + uy*s;
+  out(1, 0) = uy*ux*(1 - c) + uz*s;
+  out(1, 1) = c + uy*uy*(1 - c);
+  out(1, 2) = uy*uz*(1 - c) - ux*s;
+  out(2, 0) = uz*ux*(1 - c) - uy*s;
+  out(2, 1) = uz*uy*(1 - c) + ux*s;
+  out(2, 2) = c + uz*uz*(1 - c);
+  return out;
+}
+
+StaticScene::SceneObject *Mesh::get_transformed_static_object(double t) {
+  vector<Vector3D> originalPositions;
+
+  Vector3D translate = positions(t) + position;
+  Vector3D rotate = rotations(t);
+  Vector3D scale = scales(t);
+
+  Matrix3x3 S = Matrix3x3::identity();
+  for (int i = 0; i < 3; i++) S(i,i) = scale[i];
+
+  Matrix3x3 Rx = rotateMatrix(1, 0, 0, rotate[0]);
+  Matrix3x3 Ry = rotateMatrix(0, 1, 0, rotate[1]);
+  Matrix3x3 Rz = rotateMatrix(0, 0, 1, rotate[2]);
+
+  Matrix3x3 R = Rx * Ry * Rz;
+
+  Matrix3x3 transform = R * S;
+
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    originalPositions.push_back(v->position);
+    v->position = (transform * v->position) + translate;
+  }
+
+  StaticScene::SceneObject *output = new StaticScene::Mesh(mesh, bsdf);
+
+  int i = 0;
+  for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
+    v->position = originalPositions[i++];
+  }
+
+  return output;
+}
 
 } // namespace DynamicScene
 } // namespace CMU462

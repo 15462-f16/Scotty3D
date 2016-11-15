@@ -27,13 +27,15 @@ namespace CMU462 { namespace DynamicScene {
 
 class XFormWidget : public SceneObject
 {
-   // Type specifying current mode of operation
-   enum class Mode { Translate, Rotate, Scale };
+
 
    public:
       // Initially, the XFormWidget is not associated with any
       // object (the target object and element will be NULL)
       XFormWidget();
+
+     // Type specifying current mode of operation
+     enum class Mode { Translate, Rotate, Scale };
 
       // Set the object to be transformed
       void setTarget( Selection& target );
@@ -59,11 +61,12 @@ class XFormWidget : public SceneObject
       // SceneObject methods
       virtual void set_draw_styles(DrawStyle *defaultStyle, DrawStyle *hoveredStyle, DrawStyle *selectedStyle);
       virtual void draw();
+      virtual void drawGhost() { draw(); };
       virtual BBox get_bbox();
       virtual Info getInfo();
       virtual void drag( double x, double y, double dx, double dy, const Matrix4x4& modelViewProj );
       virtual StaticScene::SceneObject *get_static_object();
-      virtual void draw_pick( int& pickID );
+      virtual void draw_pick( int& pickID, bool transformed=false );
       virtual void setSelection( int pickID, Selection& selection );
       
       // The target is the object to be transformed by the widget;
@@ -80,14 +83,27 @@ class XFormWidget : public SceneObject
       // reference frame (e.g., during a drag).
       void updateGeometry();
 
+      // Toggle object select mode
+      void enterObjectMode();
+      void exitObjectMode();
+      void enterJointMode(bool isRoot);
+      void exitJointMode();
+      void enterTransformedMode();
+      void exitTransformedMode();
+
+      // Current and most recent modes of operation
+      Mode mode, lastMode;
+
    protected:
       map<int,Selection::Axis> pickIDToAxis;
       vector<Vector3D> axes;
       BBox bounds;
       Vector3D center;
 
-      // Current and most recent modes of operation
-      Mode mode, lastMode;
+      bool objectMode;
+      bool jointMode, jointIsRoot;
+      bool transformedMode;
+
 
       void directionalTransform( Vector3D& position, vector<int> transformAxes, Vector3D center, double x, double y, double dx, double dy, const Matrix4x4& modelViewProj );
 

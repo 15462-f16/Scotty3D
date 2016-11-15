@@ -16,6 +16,8 @@ set(APPLICATION_SOURCE
     dynamic_scene/scene.cpp
     dynamic_scene/sphere.cpp
     dynamic_scene/widgets.cpp
+    dynamic_scene/skeleton.cpp
+    dynamic_scene/joint.cpp
 
     # Static scene
     static_scene/sphere.cpp
@@ -35,6 +37,9 @@ set(APPLICATION_SOURCE
     camera.cpp
     sampler.cpp
     pathtracer.cpp
+
+    # Animator
+    timeline.cpp
 
     # misc
     misc/sphere_drawing.cpp

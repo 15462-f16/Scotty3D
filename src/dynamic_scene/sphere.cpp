@@ -22,10 +22,11 @@ void Sphere::set_draw_styles(DrawStyle *defaultStyle, DrawStyle *hoveredStyle,
 }
 
 void Sphere::draw() {
+  glTranslatef(position.x, position.y, position.z);
   Misc::draw_sphere_opengl(p, r);
 }
 
-void Sphere::draw_pick( int& pickID )
+void Sphere::draw_pick( int& pickID , bool transformed)
 {
    // TODO Currently, since nothing is drawn, spheres cannot be picked!
 }

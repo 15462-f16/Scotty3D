@@ -35,10 +35,16 @@ class DrawStyle {
     glPointSize(vertexRadius);
   }
 
+  void style_joint() const {
+     glColor4fv(&jointColor.r);
+     glLineWidth(strokeWidth);
+  }
+
   Color halfedgeColor;
   Color vertexColor;
   Color edgeColor;
   Color faceColor;
+  Color jointColor;
 
   float strokeWidth;
   float vertexRadius;

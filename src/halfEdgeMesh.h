@@ -548,6 +548,12 @@
         Vector3D position;  ///< vertex position
 
         /**
+         * For linear blend skinning, this will be the original vertex position
+         * without any transformations applied.
+         */
+        Vector3D bindPosition;
+
+        /**
          * For subdivision, this will be the updated position of the vertex
          */
         Vector3D newPosition;
@@ -579,6 +585,16 @@
          * Gather metadata about this element.
          */
         virtual Info getInfo();
+
+        /**
+         * Get all vertices that are at most depth away from this vertex, storing in seen.
+         */
+        void getNeighborhood(map<HalfedgeIter, double>& seen, int depth=1);
+
+        /**
+         * Do a gaussian blur on the offsets of neighbors of the vertex.
+         */
+        void smoothNeighborhood(double diff, map<HalfedgeIter, double>& seen, int depth=1);
 
         /**
          * Return principal axes, where the third (Z) direction is parallel
@@ -633,6 +649,10 @@
 
         // TODO : add texcoord support
         // Complex texcoord;  ///< vertex texture coordinate
+
+        float offset;
+        float velocity;
+        float laplacian() const;
 
         /**
          * Check if if this vertex is on the boundary of the surface

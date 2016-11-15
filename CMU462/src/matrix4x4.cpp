@@ -191,6 +191,11 @@ namespace CMU462 {
            x[3]*entries[3];
   }
 
+  Vector3D Matrix4x4::operator*(const Vector3D& x) const {
+    Vector4D x4d(x, 1);
+    return operator*(x4d).projectTo3D();
+  }
+
   // Naive Transposition.
   Matrix4x4 Matrix4x4::T( void ) const {
     const Matrix4x4& A( *this );
@@ -252,6 +257,56 @@ namespace CMU462 {
     B(1,0) = 0.; B(1,1) = 1.; B(1,2) = 0.; B(1,3) = 0.;
     B(2,0) = 0.; B(2,1) = 0.; B(2,2) = 1.; B(2,3) = 0.;
     B(3,0) = 0.; B(3,1) = 0.; B(3,2) = 0.; B(3,3) = 1.;
+
+    return B;
+  }
+
+  Matrix4x4 Matrix4x4::rotation(double theta, Axis axis) {
+    Matrix4x4 B;
+
+    switch (axis)
+    {
+    case Axis::X:
+      B(0, 0) = 1.; B(0, 1) = 0.;         B(0, 2) = 0.;           B(0, 3) = 0.;
+      B(1, 0) = 0.; B(1, 1) = cos(theta); B(1, 2) = -sin(theta);  B(1, 3) = 0.;
+      B(2, 0) = 0.; B(2, 1) = sin(theta); B(2, 2) = cos(theta);   B(2, 3) = 0.;
+      B(3, 0) = 0.; B(3, 1) = 0.;          B(3, 2) = 0.;          B(3, 3) = 1.;
+      break;
+    case Axis::Y:
+      B(0, 0) = cos(theta);   B(0, 1) = 0.; B(0, 2) = sin(theta); B(0, 3) = 0.;
+      B(1, 0) = 0.;           B(1, 1) = 1.; B(1, 2) = 0.;         B(1, 3) = 0.;
+      B(2, 0) = -sin(theta);  B(2, 1) = 0.; B(2, 2) = cos(theta); B(2, 3) = 0.;
+      B(3, 0) = 0.;           B(3, 1) = 0.; B(3, 2) = 0.;         B(3, 3) = 1.;
+      break;
+    case Axis::Z:
+      B(0, 0) = cos(theta); B(0, 1) = -sin(theta);  B(0, 2) = 0.; B(0, 3) = 0.;
+      B(1, 0) = sin(theta); B(1, 1) = cos(theta);   B(1, 2) = 0.; B(1, 3) = 0.;
+      B(2, 0) = 0.;         B(2, 1) = 0.;           B(2, 2) = 1.; B(2, 3) = 0.;
+      B(3, 0) = 0.;         B(3, 1) = 0.;           B(3, 2) = 0.; B(3, 3) = 1.;
+      break;
+    default:
+      break;
+    }
+
+    return B;
+  }
+
+  Matrix4x4 Matrix4x4::translation(Vector3D t) {
+    Matrix4x4 B;
+
+    B(0, 0) = 1.; B(0, 1) = 0.; B(0, 2) = 0.; B(0, 3) = t.x;
+    B(1, 0) = 0.; B(1, 1) = 1.; B(1, 2) = 0.; B(1, 3) = t.y;
+    B(2, 0) = 0.; B(2, 1) = 0.; B(2, 2) = 1.; B(2, 3) = t.z;
+    B(3, 0) = 0.; B(3, 1) = 0.; B(3, 2) = 0.; B(3, 3) = 1.;
+
+    return B;
+  }
+  
+  Matrix4x4 Matrix4x4::scaling(Vector3D s) {
+    Matrix4x4 B = Matrix4x4::identity();
+    B(0, 0) = s.x;
+    B(1, 1) = s.y;
+    B(2, 2) = s.z;
 
     return B;
   }

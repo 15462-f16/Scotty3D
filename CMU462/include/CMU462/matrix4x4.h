@@ -23,6 +23,7 @@ class Matrix4x4 {
 
   public:
 
+  enum class Axis { X, Y, Z };
 
   // The default constructor.
   Matrix4x4(void) { }
@@ -35,8 +36,8 @@ class Matrix4x4 {
     for( int i = 0; i < 4; i++ )
     for( int j = 0; j < 4; j++ )
     {
-	  // Transpostion happens within the () query.
-	  (*this)(i,j) = data[i*4 + j];
+      // Transpostion happens within the () query.
+      (*this)(i,j) = data[i*4 + j];
     }
 
   }
@@ -61,6 +62,21 @@ class Matrix4x4 {
    * Returns a fresh 4x4 identity matrix.
    */
   static Matrix4x4 identity( void );
+
+  /**
+  * Returns matrix encoding a 3D counter-clockwise rotation by the angle theta in homogeneous coordinates. The angle is given in Radians.
+  */
+  static Matrix4x4 rotation(double theta, Axis axis);
+
+  /**
+  * Returns matrix encoding 3D translation by the vector t in homogeneous coordinates.
+  */
+  static Matrix4x4 translation(Vector3D t);
+
+  /**
+  * Returns matrix encoding 3D scaling by the vector s in homogeneous coordinates.
+  */
+  static Matrix4x4 scaling(Vector3D s);
 
   // No Cross products for 4 by 4 matrix.
 
@@ -109,6 +125,9 @@ class Matrix4x4 {
 
   // returns A*x
   Vector4D operator*( const Vector4D& x ) const;
+
+  // returns A*x for a 3D vector x by using homogeneous coordinates
+  Vector3D operator*(const Vector3D& x) const;
 
   // divides each element by x
   void operator/=( double x );

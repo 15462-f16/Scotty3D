@@ -11,6 +11,8 @@
 #include "dynamic_scene/skeleton.h"
 #include "dynamic_scene/joint.h"
 
+#include "CMU462/lodepng.h"
+
 #include "GLFW/glfw3.h"
 
 #include <sstream>
@@ -236,7 +238,7 @@ void Application::render() {
           }
         }
       }
-      if (action == Action::Video) {
+      if (action == Action::Raytrace_Video) {
         raytrace_video();
         return;
       }
@@ -259,6 +261,12 @@ void Application::render() {
 
       if (!timeline.isCurrentlyPlaying()) scene->draw_spline_curves(timeline);
       scene->render_splines_at(timeline.getCurrentFrame(), timeline.isCurrentlyPlaying(), useCapsuleRadius);
+
+      if (action == Action::Rasterize_Video) {
+        rasterize_video();
+        return;
+      }
+
       enter_2D_GL_draw_mode();
       timeline.draw();
       exit_2D_GL_draw_mode();
@@ -829,7 +837,7 @@ void Application::keyboard_event( int key, int event, unsigned char mods )
             }
             break;
           case GLFW_KEY_SPACE:
-            if (event == GLFW_PRESS) {
+            if (event == GLFW_PRESS && (action != Action::Raytrace_Video && action != Action::Rasterize_Video)) {
               if (timeline.isCurrentlyPlaying()) timeline.action_stop();
               else {
                 timeline.action_play();
@@ -921,8 +929,11 @@ void Application::keyboard_event( int key, int event, unsigned char mods )
               }
             }
             break;
-          case GLFW_KEY_V:
+          case GLFW_KEY_N:
             if (event == GLFW_PRESS) raytrace_video();
+            break;
+          case GLFW_KEY_T:
+            if (event == GLFW_PRESS) rasterize_video();
             break;
           case GLFW_KEY_D:
             if (event == GLFW_PRESS) action = Action::BoneRadius;
@@ -1597,7 +1608,7 @@ void Application::to_visualize_mode() {
 void Application::set_up_pathtracer() {
   if (mode != MODEL_MODE && mode != ANIMATE_MODE) return;
   pathtracer->set_camera(&camera);
-  if (action == Action::Video) {
+  if (action == Action::Raytrace_Video) {
     pathtracer->set_scene(scene->get_transformed_static_scene(timeline.getCurrentFrame()));
   } else {
     pathtracer->set_scene(scene->get_static_scene());
@@ -1606,38 +1617,85 @@ void Application::set_up_pathtracer() {
 
 }
 
+void Application::rasterize_video() {
+  scene->removeObject(scene->elementTransform);
+  static string videoPrefix;
+
+  setGhosted(false);
+  
+  if (action == Action::Rasterize_Video) {
+    char num[32];
+    sprintf(num, "%04d", timeline.getCurrentFrame());
+    string fname = videoPrefix + string(num) + string(".png");
+
+    char *colors = new char[screenW*screenH*4];
+
+    glReadPixels(0,0,screenW,screenH, GL_RGBA, GL_UNSIGNED_BYTE, colors);
+
+    for (int i = 3; i < screenW*screenH*4; i+=4) {
+      if (!(colors[i-3] || colors[i-2] || colors[i-1] || colors[i]))
+        colors[i] = 255;
+    }
+
+    uint32_t *frame = (uint32_t*)colors;
+    size_t w = screenW;
+    size_t h = screenH;
+    uint32_t* frame_out = new uint32_t[w * h];
+    for(size_t i = 0; i < h; ++i) {
+      memcpy(frame_out + i * w, frame + (h - i - 1) * w, 4 * w);
+    }
+
+    fprintf(stderr, "[Animator] Saving to file: %s... ", fname.c_str());
+    lodepng::encode(fname, (unsigned char*) frame_out, w, h);
+    fprintf(stderr, "Done!\n");
+
+    if (timeline.getCurrentFrame() == timeline.getMaxFrame()) {
+      timeline.action_rewind();
+      cout << "Done rendering video!" << endl;
+      action = Action::Object;
+    }
+  } else {
+    action = Action::Rasterize_Video;
+    videoPrefix = string("Video_") + to_string(time(NULL)) + string("_");
+    timeline.action_rewind();
+    timeline.action_play();
+  }
+}
+
+
 void Application::raytrace_video() {
   static string videoPrefix;
   
-  if (action == Action::Video) {
+  if (action == Action::Raytrace_Video) {
     if (pathtracer->is_done()) {
       char num[32];
       sprintf(num, "%04d", timeline.getCurrentFrame());
-      cout << videoPrefix + string(num) + string(".png") << endl;
-//      pathtracer->save_image(videoPrefix + string(to_string(timeline.getCurrentFrame())) + string(".png"));
+      pathtracer->save_image(videoPrefix + num + string(".png"));
       timeline.step();
-      pathtracer->clear();
-      pathtracer->stop();
 
-      set_up_pathtracer();
-      pathtracer->stop();
-      pathtracer->start_raytracing();
       if (timeline.getCurrentFrame() == timeline.getMaxFrame()) {
-        timeline.step();
+        timeline.action_stop();
         timeline.action_rewind();
         cout << "Done rendering video!" << endl;
-        action = Action::Object;   
+        action = Action::Object;
+        return;
       }
+      pathtracer->stop();
+      pathtracer->clear();
+      set_up_pathtracer();
+      pathtracer->start_raytracing();
+
     }
   } else {
-    action = Action::Video;
+    action = Action::Raytrace_Video;
     scene->triangulateSelection();
     videoPrefix = string("Video_") + to_string(time(NULL)) + string("_");
     timeline.action_rewind();
     timeline.action_play();
     char num[32];
-    set_up_pathtracer();
     pathtracer->stop();
+    pathtracer->clear();
+    set_up_pathtracer();
     pathtracer->start_raytracing();
   }
 }

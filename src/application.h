@@ -122,7 +122,8 @@ class Application : public Renderer {
      Wave,
      Object,
      Pose,
-     Video
+     Raytrace_Video,
+     Rasterize_Video
   };
   Action action;
 
@@ -149,6 +150,7 @@ class Application : public Renderer {
   void cycle_edit_action();
   void set_up_pathtracer();
   void raytrace_video();
+  void rasterize_video();
 
   DynamicScene::Scene *scene;
   PathTracer* pathtracer;

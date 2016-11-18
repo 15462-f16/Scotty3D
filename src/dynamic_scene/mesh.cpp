@@ -761,11 +761,11 @@ Matrix3x3 rotateMatrix(float ux, float uy, float uz, float theta) {
 StaticScene::SceneObject *Mesh::get_transformed_static_object(double t) {
   vector<Vector3D> originalPositions;
 
-  Vector3D translate = positions(t) + position;
+  Vector3D position = positions(t);
   Vector3D rotate = rotations(t);
   Vector3D scale = scales(t);
 
-  Matrix3x3 S = Matrix3x3::identity();
+  Matrix4x4 S = Matrix4x4::identity();
   for (int i = 0; i < 3; i++) S(i,i) = scale[i];
 
   Matrix3x3 Rx = rotateMatrix(1, 0, 0, rotate[0]);
@@ -773,12 +773,21 @@ StaticScene::SceneObject *Mesh::get_transformed_static_object(double t) {
   Matrix3x3 Rz = rotateMatrix(0, 0, 1, rotate[2]);
 
   Matrix3x3 R = Rx * Ry * Rz;
+  Matrix4x4 R_homogeneous = Matrix4x4::identity();
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      R_homogeneous(i,j) = R(i,j);
+    }
+  }
 
-  Matrix3x3 transform = R * S;
+  Matrix4x4 T = Matrix4x4::translation(position);
+
+  Matrix4x4 transform = T * R_homogeneous * S;
 
   for (VertexIter v = mesh.verticesBegin(); v != mesh.verticesEnd(); v++) {
     originalPositions.push_back(v->position);
-    v->position = (transform * v->position) + translate;
+    Vector4D tmp = Vector4D(v->position + v->offset * v->normal(), 1.0);
+    v->position = (transform * tmp).to3D();
   }
 
   StaticScene::SceneObject *output = new StaticScene::Mesh(mesh, bsdf);

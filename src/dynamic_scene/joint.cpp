@@ -177,8 +177,8 @@ namespace CMU462 { namespace DynamicScene {
    Vector3D Joint::getBasePosInWorld()
    {
      /* Implement Me! (Task 2a)
-     This should be fairly simple once you implement Joint::getTransform().
-     You can utilize the transformation returned by Joint::getTransform() to 
+     This should be fairly simple once you implement Joint::getTransformation().
+     You can utilize the transformation returned by Joint::getTransformation() to 
      compute the base position in world coordinate frame.
      */
 

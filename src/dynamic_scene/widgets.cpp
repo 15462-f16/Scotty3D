@@ -263,6 +263,7 @@ void XFormWidget::directionalTransform( Vector3D& p, vector<int> I, Vector3D c, 
 
    // For translation and scale, the speed of transformation will depend on how
    // well the cursor motion lines up with the selected axis in screen space.
+   // TODO: y axis inverted sometimes
    Vector3D u = E[i];
    Vector4D v( u, 1. );
    v = modelViewProj * v;
@@ -329,32 +330,32 @@ void XFormWidget::drag( double x, double y, double dx, double dy, const Matrix4x
         break;
       case Mode::Rotate:
         update = &target.object->rotation;
-        dx *= 180.0;
         break;
     }
 
-    double winX, winY, winZ;
-    double model[16], proj[16];
-    int view[4];
-    glGetDoublev(GL_MODELVIEW_MATRIX, model);
-    glGetDoublev(GL_PROJECTION_MATRIX, proj);
-    glGetIntegerv(GL_VIEWPORT, view);
-    gluProject(center.x, center.y, center.z, model, proj, view, &winX, &winY, &winZ);
-    winY = view[3] - winY;
-    double theta = atan2(winY - y, x - winX) / PI * 180;
-    switch (target.axis) {
-      case Selection::Axis::X:
-        update->x = theta;
-        break;
-      case Selection::Axis::Y:
-        update->y = theta;
-        break;
-      case Selection::Axis::Z:
-        update->z = theta;
-        break;
+    if (mode == Mode::Rotate) {
+      double winX, winY, winZ;
+      double model[16], proj[16];
+      int view[4];
+      glGetDoublev(GL_MODELVIEW_MATRIX, model);
+      glGetDoublev(GL_PROJECTION_MATRIX, proj);
+      glGetIntegerv(GL_VIEWPORT, view);
+      gluProject(center.x, center.y, center.z, model, proj, view, &winX, &winY, &winZ);
+      winY = view[3] - winY;
+      double theta = atan2(winY - y, x - winX) / PI * 180;
+      switch (target.axis) {
+        case Selection::Axis::X:
+          update->x = theta;
+          break;
+        case Selection::Axis::Y:
+          update->y = theta;
+          break;
+        case Selection::Axis::Z:
+          update->z = theta;
+          break;
+        }
     }
-
-    if (mode == Mode::Translate &&
+    else if (mode == Mode::Translate &&
         target.axis == Selection::Axis::Center) {        
       Vector4D q( *update, 1. );
       q = modelViewProj * q; 
@@ -367,6 +368,29 @@ void XFormWidget::drag( double x, double y, double dx, double dy, const Matrix4x
       q *= w;
       q = modelViewProj.inv() * q;
       *update = q.to3D();
+    }
+    else
+    {
+      vector<int> I = { 0, 0, 0 };
+      switch (target.axis)
+      {
+      case Selection::Axis::X:
+        I[0] = 1;
+        break;
+      case Selection::Axis::Y:
+        I[1] = 1;
+        break;
+      case Selection::Axis::Z:
+        I[2] = 1;
+        break;
+      case Selection::Axis::Center:
+        I[0] = I[1] = I[2] = 1;
+        break;
+      default:
+        break;
+      }
+      Vector3D c = mode == Mode::Translate ? center : Vector3D(0, 0, 0);
+      directionalTransform(*update, I, c, x, y, dx, dy, modelViewProj);
     }
 
     return;

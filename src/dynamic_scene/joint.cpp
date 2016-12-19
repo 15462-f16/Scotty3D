@@ -56,6 +56,14 @@ namespace CMU462 { namespace DynamicScene {
       q *= w;
       q = modelViewProj.inv() * q;
 
+      Matrix4x4 T = Matrix4x4::identity();
+      for (Joint* j = this; j != nullptr; j = j->parent)
+      {
+          T = j->getRotation() * T;
+      }
+      T = skeleton->mesh->getRotation() * T;
+      q = T.inv() * q;
+
       if (skeleton->root == this)
          position = q.to3D();
       else
